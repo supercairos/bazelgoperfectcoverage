@@ -1,0 +1,30 @@
+common --enable_platform_specific_config
+# TODO: Temporarily disable while rules_go migrates to Bzlmod for its dev build.
+# https://github.com/bazelbuild/bazel/issues/18958
+common --noexperimental_enable_bzlmod
+
+# A more useful default output mode for bazel query, which
+# prints "ng_module rule //foo:bar" instead of just "//foo:bar".
+query --output=label_kind
+
+# By default, failing tests don't print any output, it's logged to a
+# file instead.
+test --test_output=errors
+build --verbose_failures
+
+# Setup bazel coverage
+coverage --combined_report=lcov
+
+# Go requires a C toolchain that accepts options and emits errors like
+# gcc or clang. The Go SDK does not support MSVC.
+build:windows --cpu=x64_windows
+build:windows --compiler=mingw-gcc
+
+# NOTE(bazelbuild/bazel#10529): bazel doesn't register the mingw toolchain automatically.
+# We also need the host and target platforms to have the mingw constraint value.
+build:windows --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw
+build:windows --host_platform=@io_bazel_rules_go//go/toolchain:windows_amd64_cgo
+build:windows --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64_cgo
+build:windows --incompatible_enable_cc_toolchain_resolution
+
+build:check --all_incompatible_changes
